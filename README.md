@@ -1,4 +1,4 @@
 # mips-risc-processor
 
 - slt instruction.
-- testbench for controller.
+- Clock gating issue in register file : requires adding enable in d_ff.

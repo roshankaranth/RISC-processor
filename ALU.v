@@ -64,10 +64,11 @@ module FA(Cout,Sum,In1,In2,Cin);
     assign {Cout,Sum} = In1 + In2 + Cin;
 endmodule
 
-module ALU(in1,in2,Cin,Cout,op,binvert,out);
+module ALU(in1,in2,Cin,Cout,op,binvert,out,zero);
     input wire [31:0] in1,in2;
     input wire Cin,binvert;
     output wire Cout;
+    output wire zero;
     output wire [31:0] out;
     input wire [1:0] op;
 
@@ -79,6 +80,7 @@ module ALU(in1,in2,Cin,Cout,op,binvert,out);
 
     assign in2_val = (binvert == 1'b0) ? in2 : ~in2;
     assign out = (op == 2'b00) ? AND_res : (op == 2'b01) ? OR_res : FA_res;
+    assign zero = (out)?1'b0:1'b1;
 
     FA m1(Cout,FA_res,in1,in2_val,(binvert == 1'b0) ? Cin : 1'b1);
     bit32OR m2(OR_res, in1,in2);

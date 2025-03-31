@@ -12,7 +12,7 @@ module main_controller(RegDst, ALUSrc, MemtoReg, RegWrite, MemRead, MemWrite, Br
 
     assign RegDst = Rformat;
     assign ALUSrc = lw | sw;
-    assign MemtoReg = lw;
+    assign MemtoReg = lw; 
     assign RegWrite = Rformat | lw;
     assign MemRead =  lw;
     assign MemWrite = sw;

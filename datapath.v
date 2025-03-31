@@ -6,8 +6,8 @@ module program_counter(in,out,clk);
     reg [4:0] mem;
     input wire clk;
 
-    // initial
-    //     mem = 5'b00000;
+    initial
+        mem = 5'b00000;
 
     assign out = mem;
 
@@ -22,13 +22,38 @@ module instruction_memory(instruction,address);
     input wire [4:0] address;
 
     initial begin
-        mem[0] = 32'h00622020; //add $a0, $a2, $a0
-        mem[1] = 32'h8C450BB8; //lw $t2, 3000($v0)
-        mem[2] = 32'h1009000A; //beq $zero, $t1, 10
-        mem[3] = 32'h01A00008; //jr $t5
-        mem[4] = 32'h12345678; //beq $s1, $v1, 0x5678
-        mem[5] = 32'h98765432;
-        mem[6] = 32'hABCDABCD;
+        mem[1] = 32'h8C01000E; //lw $1,14($0);
+        mem[0] = 32'h00000000;
+        mem[2] = 32'h00000000;
+        mem[3] = 32'h00000000;
+        mem[4] = 32'h00000000;
+        mem[5] = 32'h00000000;
+        mem[6] = 32'h00000000;
+        mem[7] = 32'h00000000;
+        mem[8] = 32'h00000000;
+        mem[9] = 32'h00000000;
+        mem[10] = 32'h00000000;
+        mem[11] = 32'h00000000;
+        mem[12] = 32'h00000000;
+        mem[13] = 32'h00000000;
+        mem[14] = 32'h00000000;
+        mem[15] = 32'h00000000;
+        mem[16] = 32'h00000000;
+        mem[17] = 32'h00000000;
+        mem[18] = 32'h00000000;
+        mem[19] = 32'h00000000;
+        mem[20] = 32'h00000000;
+        mem[21] = 32'h00000000;
+        mem[22] = 32'h00000000;
+        mem[23] = 32'h00000000;
+        mem[24] = 32'h00000000;
+        mem[25] = 32'h00000000;
+        mem[26] = 32'h00000000;
+        mem[27] = 32'h00000000;
+        mem[28] = 32'h00000000;
+        mem[29] = 32'h00000000;
+        mem[30] = 32'h00000000;
+        mem[31] = 32'h00000000;
     end
 
     assign instruction = mem[address];
@@ -38,20 +63,51 @@ module data_memory(memread,memwrite,address,clk,wr_data,rd_data);
     input wire memread,memwrite,clk;
     output wire [4:0] address;
     input wire [31:0] wr_data;
-    output reg [31:0] rd_data;
+    output wire [31:0] rd_data;
 
-    reg[31:0]data_memory [31:0];
+    reg[31:0]mem [31:0];
     integer j;
 
     initial begin
-        for(j=0;j<32;j=j+1) begin
-            data_memory[j] = 32'b0;
-        end
+        mem[0] = 32'h00000000; 
+        mem[1] = 32'h00000000;
+        mem[2] = 32'h00000000;
+        mem[3] = 32'h00000000;
+        mem[4] = 32'h00000000;
+        mem[5] = 32'h00000000;
+        mem[6] = 32'h00000000;
+        mem[7] = 32'h00000000;
+        mem[8] = 32'h00000000;
+        mem[9] = 32'h00000000;
+        mem[10] = 32'h00000000;
+        mem[11] = 32'h00000000;
+        mem[12] = 32'h00000000;
+        mem[13] = 32'h00000000;
+        mem[14] = 32'h10101010;
+        mem[15] = 32'h00000000;
+        mem[16] = 32'h00000000;
+        mem[17] = 32'h00000000;
+        mem[18] = 32'h00000000;
+        mem[19] = 32'h00000000;
+        mem[20] = 32'h00000000;
+        mem[21] = 32'h00000000;
+        mem[22] = 32'h00000000;
+        mem[23] = 32'h00000000;
+        mem[24] = 32'h00000000;
+        mem[25] = 32'h00000000;
+        mem[26] = 32'h00000000;
+        mem[27] = 32'h00000000;
+        mem[28] = 32'h00000000;
+        mem[29] = 32'h00000000;
+        mem[30] = 32'h00000000;
+        mem[31] = 32'h00000000;
     end
 
+    assign rd_data = (memread) ? mem[address] : 32'bx;
+
     always @(negedge clk) begin
-        if(memread) rd_data = data_memory[address];
-        if(memwrite) data_memory[address] = wr_data;
+        //if(memread) rd_data = mem[address];
+        if(memwrite) mem[address] = wr_data;
     end
 endmodule
 
@@ -100,16 +156,20 @@ module SCDatapath(clk,address,out,reset);
     
     wire [4:0] pc_out;
     wire [31:0] instruction;
-    wire RegDst, ALUSrc, MemtoReg, RegWrite, MemRead, MemWrite, Branch, ALUOp0, ALUOp1;
+    wire RegDst, ALUSrc, MemRead, MemWrite, Branch, ALUOp0, ALUOp1;
+    wire MemtoReg;
+    wire RegWrite;
     wire [2:0]operation;
-    wire [31:0] ReadData1, ReadData2;
+    wire [31:0] ReadData1;
+    wire [31:0] ReadData2;
     wire Cout;
     wire [31:0] seout;
     wire [31:0] alu_mux_out;
     wire [31:0] alu_out;
     wire [31:0] rd_data;
     wire [4:0] mux1_out;
-    wire [31:0] mux2_out,mux3_out;
+    wire [31:0] mux2_out;
+    wire [31:0] mux3_out;
     wire [31:0] shft_address;
     wire [31:0] next_address;
     wire [31:0] a2_out;
@@ -122,7 +182,7 @@ module SCDatapath(clk,address,out,reset);
     signExt se(instruction[15:0],seout);
     bit5_2to1mux mux1(instruction[20:16],instruction[15:11],RegDst,mux1_out);
     bit32_2to1mux mux2(ReadData2,seout,ALUSrc,mux2_out);
-    bit32_2to1mux mux3(rd_data,alu_out,MemtoReg,mux3_out);
+    bit32_2to1mux mux3(alu_out,rd_data,MemtoReg,mux3_out);
     bit32_2to1mux mux4(next_address,a2_out,zero&Branch,address);
     adder a1(address,3'b100,nxt_address);
     adder a2(next_address,shft_address,a2_out);
@@ -151,9 +211,8 @@ module testbench();
     end
 
     initial begin
-        clk = 1; address = 5'b00000; reset = 0;
-        #6 address = 5'b00001; reset = 1;
-        #20 address = 5'b00011;
+        clk = 1; address = 5'b00001; reset = 0;
+        #6 reset = 1;
         #40 $finish;
     end
 endmodule

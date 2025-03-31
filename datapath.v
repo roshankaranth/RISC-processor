@@ -22,14 +22,14 @@ module instruction_memory(instruction,address);
     input wire [4:0] address;
 
     initial begin
-        mem[1] = 32'h8C01000E; //lw $1,14($0);
-        mem[0] = 32'h00000000;
-        mem[2] = 32'h00000000;
-        mem[3] = 32'h00000000;
-        mem[4] = 32'h00000000;
-        mem[5] = 32'h00000000;
-        mem[6] = 32'h00000000;
-        mem[7] = 32'h00000000;
+        mem[0] = 32'h8C01000E; //lw $1,14($0);
+        mem[1] = 32'hAC01000D; //sw $1, 13($0);
+        mem[2] = 32'h10010002; //beq $0, $1, 2
+        mem[3] = 32'h00000010;
+        mem[4] = 32'h00000100;
+        mem[5] = 32'h00001000;
+        mem[6] = 32'h00010000;
+        mem[7] = 32'h00100000;
         mem[8] = 32'h00000000;
         mem[9] = 32'h00000000;
         mem[10] = 32'h00000000;
@@ -142,13 +142,13 @@ module shifter(in,out);
 endmodule
 
 module adder(a,b,out);
-    input wire [31:0] a,b;
-    output wire [31:0] out;
+    input wire [5:0] a,b;
+    output wire [5:0] out;
 
     assign out = a+b;
 endmodule
 
-module SCDatapath(clk,address,out,reset);
+module SCDatapath(clk,address,out,reset,mux4_out);
     input wire clk;
     input wire [4:0] address;
     input wire reset;
@@ -170,8 +170,9 @@ module SCDatapath(clk,address,out,reset);
     wire [4:0] mux1_out;
     wire [31:0] mux2_out;
     wire [31:0] mux3_out;
+    output wire [31:0] mux4_out;
     wire [31:0] shft_address;
-    wire [31:0] next_address;
+    wire [5:0] next_address;
     wire [31:0] a2_out;
     wire zero;
 
@@ -183,8 +184,8 @@ module SCDatapath(clk,address,out,reset);
     bit5_2to1mux mux1(instruction[20:16],instruction[15:11],RegDst,mux1_out);
     bit32_2to1mux mux2(ReadData2,seout,ALUSrc,mux2_out);
     bit32_2to1mux mux3(alu_out,rd_data,MemtoReg,mux3_out);
-    bit32_2to1mux mux4(next_address,a2_out,zero&Branch,address);
-    adder a1(address,3'b100,nxt_address);
+    bit32_2to1mux mux4(next_address,a2_out,zero&Branch,mux4_out);
+    adder a1(address,5'b00100,next_address);
     adder a2(next_address,shft_address,a2_out);
     shifter shft(seout,shft_address);
     data_memory d(MemRead,MemWrite,alu_out,clk,ReadData2,rd_data);
@@ -199,11 +200,11 @@ module testbench();
     reg reset;
     wire [31:0] out;
     
-
-    SCDatapath uut(clk,address,out,reset);
+    wire [31:0] temp;
+    SCDatapath uut(clk,address,out,reset,temp);
 
     initial
-        $monitor("time : %0t, address : %b, out : %b",$time,address,out);
+        $monitor("time : %0t, address : %b, out : %b, temp = %b",$time,address,out,temp);
 
     initial begin
         forever
@@ -211,9 +212,9 @@ module testbench();
     end
 
     initial begin
-        clk = 1; address = 5'b00001; reset = 0;
+        clk = 1; address = 5'b00010; reset = 0;
         #6 reset = 1;
-        #40 $finish;
+        #100 $finish;
     end
 endmodule
 

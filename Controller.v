@@ -1,14 +1,16 @@
 `timescale 1ns/1ps;
 
-module main_controller(RegDst, ALUSrc, MemtoReg, RegWrite, MemRead, MemWrite, Branch, ALUOp0, ALUOp1, Op);
+module main_controller(RegDst, ALUSrc, MemtoReg, RegWrite, MemRead, MemWrite, Jump, Branch, ALUOp0, ALUOp1, Op);
     input wire [5:0] Op;
-    output wire RegDst, ALUSrc, MemtoReg, RegWrite, MemRead, MemWrite, Branch, ALUOp0, ALUOp1;
-    wire Rformat,lw,sw,beq;
+    output wire RegDst, ALUSrc, MemtoReg, RegWrite, MemRead, MemWrite, Jump, Branch, ALUOp0, ALUOp1;
+    wire Rformat,lw,sw,beq,j;
 
     assign Rformat = (~Op[0]) & (~Op[1]) & (~Op[2]) & (~Op[3]) & (~Op[4]) & (~Op[5]);
     assign lw = (Op[0]) & (Op[1]) & (~Op[2]) & (~Op[3]) & (~Op[4]) & (Op[5]);
     assign sw = (Op[0]) & (Op[1]) & (~Op[2]) & (Op[3]) & (~Op[4]) & (Op[5]);
     assign beq = (~Op[0]) & (~Op[1]) & (Op[2]) & (~Op[3]) & (~Op[4]) & (~Op[5]);
+    assign j = (~Op[0]) & (Op[1]) & (~Op[2]) & (~Op[3]) & (~Op[4]) & (~Op[5]);
+
 
     assign RegDst = Rformat;
     assign ALUSrc = lw | sw;
@@ -19,6 +21,7 @@ module main_controller(RegDst, ALUSrc, MemtoReg, RegWrite, MemRead, MemWrite, Br
     assign Branch = beq;
     assign ALUOp0 = Rformat;
     assign ALUOp1 = beq;
+    assign Jump = j;
 
 endmodule
 

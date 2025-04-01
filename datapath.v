@@ -25,7 +25,7 @@ module instruction_memory(instruction,address);
         mem[0] = 32'h8C01000E; //lw $1,14($0);
         mem[1] = 32'hAC01000D; //sw $1, 13($0);
         mem[2] = 32'h10010002; //beq $0, $1, 2
-        mem[3] = 32'h00000010;
+        mem[3] = 32'h08000004; //j Label -> +4
         mem[4] = 32'h00000100;
         mem[5] = 32'h00001000;
         mem[6] = 32'h00010000;
@@ -148,7 +148,14 @@ module adder(a,b,out);
     assign out = a+b;
 endmodule
 
-module SCDatapath(clk,address,out,reset,mux4_out);
+module concat(in1,in2,out);
+    input wire [31:0] in1,in2;
+    output wire [31:0] out;
+
+    assign out = {in2[31:28],in1[27:0]};
+endmodule
+
+module SCDatapath(clk,address,out,reset,mux5_out);
     input wire clk;
     input wire [4:0] address;
     input wire reset;
@@ -157,6 +164,7 @@ module SCDatapath(clk,address,out,reset,mux4_out);
     wire [4:0] pc_out;
     wire [31:0] instruction;
     wire RegDst, ALUSrc, MemRead, MemWrite, Branch, ALUOp0, ALUOp1;
+    wire Jump;
     wire MemtoReg;
     wire RegWrite;
     wire [2:0]operation;
@@ -170,15 +178,18 @@ module SCDatapath(clk,address,out,reset,mux4_out);
     wire [4:0] mux1_out;
     wire [31:0] mux2_out;
     wire [31:0] mux3_out;
-    output wire [31:0] mux4_out;
-    wire [31:0] shft_address;
+    output wire [31:0] mux5_out;
+    wire [31:0] mux4_out;
+    wire [31:0] jmp_address;
+    wire [31:0] shft_address1;
+    wire [31:0] shft_address2;
     wire [5:0] next_address;
     wire [31:0] a2_out;
     wire zero;
 
     program_counter pc(address,pc_out,clk);
     instruction_memory im(instruction,pc_out);
-    main_controller mc(RegDst, ALUSrc, MemtoReg, RegWrite, MemRead, MemWrite, Branch, ALUOp0, ALUOp1, instruction[31:26]);
+    main_controller mc(RegDst, ALUSrc, MemtoReg, RegWrite, MemRead, MemWrite, Jump, Branch, ALUOp0, ALUOp1, instruction[31:26]);
     ALU_controller ac(ALUOp0, ALUOp1, instruction[5:0], operation);
     signExt se(instruction[15:0],seout);
     bit5_2to1mux mux1(instruction[20:16],instruction[15:11],RegDst,mux1_out);
@@ -187,7 +198,10 @@ module SCDatapath(clk,address,out,reset,mux4_out);
     bit32_2to1mux mux4(next_address,a2_out,zero&Branch,mux4_out);
     adder a1(address,5'b00100,next_address);
     adder a2(next_address,shft_address,a2_out);
-    shifter shft(seout,shft_address);
+    shifter shft1(seout,shft1_address);
+    shifter shft2(instruction[25:0],shft_address2);
+    concat c1(shft_address2, next_address, jmp_address);
+    bit32_2to1mux mux5(mux4_out, jmp_address, Jump, mux5_out);
     data_memory d(MemRead,MemWrite,alu_out,clk,ReadData2,rd_data);
     RegFile rf(clk,reset,instruction[25:21],instruction[20:16],mux3_out,mux1_out,RegWrite,ReadData1,ReadData2);
     ALU alu(ReadData1,mux2_out,1'b0,Cout,operation,operation[2],alu_out,zero);
@@ -212,7 +226,7 @@ module testbench();
     end
 
     initial begin
-        clk = 1; address = 5'b00010; reset = 0;
+        clk = 1; address = 5'b00011; reset = 0;
         #6 reset = 1;
         #100 $finish;
     end
